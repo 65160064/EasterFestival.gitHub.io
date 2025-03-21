@@ -19,7 +19,7 @@
             background: linear-gradient(135deg, #f4e5c2, #e8d5b5);
             font-family: 'Pixelify Sans', sans-serif;
             color: #6b4f4f;
-            background-image: url('https://assets.codepen.io/1950841/bg-tile.png');
+            background-image: url('bg-tile.jpg');
             background-repeat: repeat;
         }
 
@@ -172,10 +172,47 @@
                     4px calc(100% - 8px),
                     0% calc(100% - 8px));
         }
+
+        #audioControls {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            gap: 15px;
+        }
+
+        .audioButton {
+            background-color: #faebd7;
+            border: 4px solid #8a6e5b;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 16px;
+            color: #6b4f4f;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Pixelify Sans', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .audioButton:hover {
+            background-color: #e8d5b5;
+        }
+
+        .audioButton svg {
+            width: 16px;
+            height: 16px;
+            fill: #6b4f4f;
+        }
     </style>
     <script type="text/javascript">
         var game, background, sebastian, eggs = [], score = 0, timeLeft = 60;
         var gameRunning = false;
+        var bgMusic, collectSound, walkSound;
+        var musicEnabled = true;
+        var soundEnabled = true;
+        var isWalking = false;
+        var walkSoundInterval;
 
         var eggImages = ["egg1.png", "egg2.png", "egg3.png", "egg4.png"];
 
@@ -198,6 +235,33 @@
 
         function init() {
             document.getElementById("dialog").style.display = "block";
+
+            // Initialize audio elements
+            bgMusic = new Audio('bg-sound.mp3'); // เปลี่ยนชื่อไฟล์เสียงให้ถูกต้อง
+            bgMusic.loop = true;
+            bgMusic.volume = 0.5;
+
+            collectSound = new Audio('collect-sound.wav');
+            collectSound.volume = 0.5;
+
+            walkSound = new Audio('walk-sound.mp3');
+            walkSound.volume = 0.7;
+        }
+
+        function toggleMusic() {
+            musicEnabled = !musicEnabled;
+            if (musicEnabled) {
+                if (gameRunning) bgMusic.play();
+                document.getElementById("musicIcon").innerHTML = '♪';
+            } else {
+                bgMusic.pause();
+                document.getElementById("musicIcon").innerHTML = '♪̸';
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById("soundIcon").innerHTML = soundEnabled ? '🔊' : '🔇';
         }
 
         function startGame() {
@@ -218,6 +282,13 @@
             document.getElementById("scoreBoard").innerText = "Eggs: 0";
             document.getElementById("timer").innerText = "Time: 60s";
             document.getElementById("reset").style.display = "none";
+            document.getElementById("audioControls").style.display = "flex";
+
+            // Start background music if enabled
+            if (musicEnabled) {
+                bgMusic.currentTime = 0;
+                bgMusic.play();
+            }
 
             game = new Scene();
             game.setSize(700, 700);
@@ -312,6 +383,13 @@
                         eggs[i].hide();
                         eggs.splice(i, 1);
                         spawnEggs(1);
+
+                        // Play collect sound
+                        if (soundEnabled) {
+                            collectSound.currentTime = 0;
+                            collectSound.play();
+                        }
+
                         i--;
                         continue;
                     }
@@ -344,35 +422,71 @@
             var speed = 2;
             var width = sebastian.width;
             var height = sebastian.height;
+            var isMoving = false;
 
             if (keysDown[K_LEFT]) {
                 newX -= speed;
                 sebastian.setCurrentCycle("left");
                 sebastian.setMoveAngle(270);
+                isMoving = true;
             }
             if (keysDown[K_RIGHT]) {
                 newX += speed;
                 sebastian.setCurrentCycle("right");
                 sebastian.setMoveAngle(90);
+                isMoving = true;
             }
             if (keysDown[K_UP]) {
                 newY -= speed;
                 sebastian.setCurrentCycle("up");
                 sebastian.setMoveAngle(0);
+                isMoving = true;
             }
             if (keysDown[K_DOWN]) {
                 newY += speed;
                 sebastian.setCurrentCycle("down");
                 sebastian.setMoveAngle(180);
+                isMoving = true;
             }
 
             if (!checkCollision(newX, newY, width, height)) {
                 sebastian.setPosition(newX, newY);
                 sebastian.setSpeed(speed);
                 sebastian.playAnimation();
+
+                // Handle walking sound
+                if (isMoving && !isWalking && soundEnabled) {
+                    isWalking = true;
+                    playWalkSound();
+                    // Set interval for continuous walking sound
+                    walkSoundInterval = setInterval(playWalkSound, 300);
+                } else if (!isMoving && isWalking) {
+                    isWalking = false;
+                    clearInterval(walkSoundInterval);
+                }
+
             } else {
                 sebastian.setSpeed(0);
                 sebastian.pauseAnimation();
+
+                // Stop walking sound
+                if (isWalking) {
+                    isWalking = false;
+                    clearInterval(walkSoundInterval);
+                }
+            }
+
+            // If not moving, stop walking sounds
+            if (!isMoving && isWalking) {
+                isWalking = false;
+                clearInterval(walkSoundInterval);
+            }
+        }
+
+        function playWalkSound() {
+            if (soundEnabled) {
+                walkSound.currentTime = 0;
+                walkSound.play();
             }
         }
 
@@ -389,6 +503,28 @@
             gameRunning = false;
             if (game) {
                 game.stop();
+            }
+
+            // Stop any ongoing sounds
+            if (isWalking) {
+                isWalking = false;
+                clearInterval(walkSoundInterval);
+            }
+
+            // Fade out background music
+            if (bgMusic.volume > 0 && musicEnabled) {
+                var fadeOut = setInterval(function () {
+                    if (bgMusic.volume > 0.1) {
+                        bgMusic.volume -= 0.1;
+                    } else {
+                        bgMusic.pause();
+                        bgMusic.volume = 0.5;
+                        clearInterval(fadeOut);
+                    }
+                }, 100);
+            } else {
+                bgMusic.pause();
+                bgMusic.volume = 0.5;
             }
 
             document.getElementById("dialog").style.display = "block";
@@ -415,6 +551,14 @@
     </div>
     <div id="gameContainer" class="pixel-corners">
         <div></div>
+    </div>
+    <div id="audioControls" style="display: none;">
+        <button type="button" onclick="toggleMusic()" class="audioButton pixel-corners">
+            <span id="musicIcon">♪</span> Music
+        </button>
+        <button type="button" onclick="toggleSound()" class="audioButton pixel-corners">
+            <span id="soundIcon">🔊</span> Sound
+        </button>
     </div>
     <div id="reset" style="display: none;">
         <button type="button" onclick="startGame()" class="pixel-corners">Play again</button>
