@@ -1,0 +1,430 @@
+<!DOCTYPE HTML>
+<html lang="en-US">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Easter Festival</title>
+    <script type="text/javascript" src="simpleGame.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #f4e5c2, #e8d5b5);
+            font-family: 'Pixelify Sans', sans-serif;
+            color: #6b4f4f;
+            background-image: url('https://assets.codepen.io/1950841/bg-tile.png');
+            background-repeat: repeat;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 700px;
+            height: 700px;
+            border-radius: 10px;
+            overflow: hidden;
+            background-color: #d4c6b5;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
+            border: 6px solid #8a6e5b;
+            image-rendering: pixelated;
+        }
+
+        #statusContainer {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            width: 100%;
+            gap: 20px;
+        }
+
+        .statusFrame {
+            background-color: #faebd7;
+            border: 4px solid #8a6e5b;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 24px;
+            color: #6b4f4f;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            min-width: 180px;
+            image-rendering: pixelated;
+            position: relative;
+        }
+
+        .statusFrame::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(45deg,
+                    rgba(255, 255, 255, 0.1),
+                    rgba(255, 255, 255, 0.1) 3px,
+                    rgba(255, 255, 255, 0) 3px,
+                    rgba(255, 255, 255, 0) 6px);
+            pointer-events: none;
+        }
+
+        #reset {
+            margin-top: 20px;
+        }
+
+        button {
+            background-color: #a88c7b;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            font-size: 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Pixelify Sans', sans-serif;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            border: 4px solid #8a6e5b;
+            text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+            image-rendering: pixelated;
+        }
+
+        button:hover {
+            background-color: #8a6e5b;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        #dialog {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            z-index: 3;
+            width: 400px;
+            border: 6px solid #8a6e5b;
+            image-rendering: pixelated;
+            display: none;
+        }
+
+        #dialog::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            right: 8px;
+            bottom: 8px;
+            border: 3px dashed #a88c7b;
+            border-radius: 10px;
+            pointer-events: none;
+        }
+
+        #dialog h2 {
+            margin-top: 0;
+            font-size: 32px;
+            color: #6b4f4f;
+            text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);
+        }
+
+        #dialog p {
+            font-size: 18px;
+            color: #6b4f4f;
+            margin: 10px 0;
+        }
+
+        #startButton {
+            margin-top: 20px;
+        }
+
+        .pixel-corners {
+            clip-path:
+                polygon(0% 8px,
+                    4px 8px,
+                    4px 4px,
+                    8px 4px,
+                    8px 0%,
+                    calc(100% - 8px) 0%,
+                    calc(100% - 8px) 4px,
+                    calc(100% - 4px) 4px,
+                    calc(100% - 4px) 8px,
+                    100% 8px,
+                    100% calc(100% - 8px),
+                    calc(100% - 4px) calc(100% - 8px),
+                    calc(100% - 4px) calc(100% - 4px),
+                    calc(100% - 8px) calc(100% - 4px),
+                    calc(100% - 8px) 100%,
+                    8px 100%,
+                    8px calc(100% - 4px),
+                    4px calc(100% - 4px),
+                    4px calc(100% - 8px),
+                    0% calc(100% - 8px));
+        }
+    </style>
+    <script type="text/javascript">
+        var game, background, sebastian, eggs = [], score = 0, timeLeft = 60;
+        var gameRunning = false;
+
+        var eggImages = ["egg1.png", "egg2.png", "egg3.png", "egg4.png"];
+
+        // กำหนดพื้นที่block ห้ามเดิน
+        var obstacles = [
+            { x: 0, y: 670, width: 150, height: 80 },
+            { x: 600, y: 670, width: 160, height: 200 },
+            { x: 320, y: 650, width: 150, height: -20 },
+            { x: 380, y: 500, width: 60, height: 0 },
+            { x: 550, y: 550, width: 40, height: -40 },
+            { x: 540, y: 380, width: 150, height: 0 },
+            { x: 540, y: 170, width: 150, height: 50 },
+            { x: 220, y: 160, width: 200, height: 130 },
+            { x: 150, y: 170, width: 80, height: 50 },
+            { x: 1, y: 0, width: 0, height: 700 },
+            { x: 750, y: 0, width: 0, height: 700 },
+            { x: 0, y: 800, width: 700, height: 0 },
+            { x: 0, y: 1, width: 700, height: 0 },
+        ];
+
+        function init() {
+            document.getElementById("dialog").style.display = "block";
+        }
+
+        function startGame() {
+            document.getElementById("dialog").style.display = "none";
+
+            if (game) {
+                game.stop();
+                game.clear();
+            }
+            const existingCanvas = document.querySelector("canvas");
+            if (existingCanvas) {
+                existingCanvas.remove();
+            }
+
+            score = 0;
+            timeLeft = 60;
+            eggs = [];
+            document.getElementById("scoreBoard").innerText = "Eggs: 0";
+            document.getElementById("timer").innerText = "Time: 60s";
+            document.getElementById("reset").style.display = "none";
+
+            game = new Scene();
+            game.setSize(700, 700);
+
+            background = new Sprite(game, "town.png", 700, 700);
+            background.setSpeed(0, 0);
+            background.setPosition(350, 350);
+
+            sebastian = new Sprite(game, "sebastian.png", 64, 128);
+            sebastian.loadAnimation(64, 128, 16, 32);
+            sebastian.generateAnimationCycles();
+            sebastian.renameCycles(["down", "right", "up", "left"]);
+            sebastian.setAnimationSpeed(200);
+            sebastian.setPosition(350, 350);
+            sebastian.setSpeed(0);
+            sebastian.pauseAnimation();
+            sebastian.setCurrentCycle("down");
+
+            spawnEggs(4);
+
+            if (window.timerInterval) {
+                clearInterval(window.timerInterval);
+            }
+            window.timerInterval = setInterval(updateTimer, 1000);
+
+            gameRunning = true;
+            game.start();
+        }
+
+        function spawnEggs(num) {
+            for (var i = 0; i < num; i++) {
+                var egg;
+                var validPosition = false;
+
+                while (!validPosition) {
+                    var randomX = Math.random() * 580 + 60;
+                    var randomY = Math.random() * 580 + 60;
+
+                    validPosition = true;
+
+                    // ตรวจสอบว่าไข่ไม่วางในพื้นที่ obstacles
+                    for (var j = 0; j < obstacles.length; j++) {
+                        var obs = obstacles[j];
+                        if (
+                            randomX < obs.x + obs.width &&
+                            randomX + 30 > obs.x &&
+                            randomY < obs.y + obs.height &&
+                            randomY + 35 > obs.y
+                        ) {
+                            validPosition = false;
+                            break;
+                        }
+                    }
+
+                    // ตรวจสอบว่าไข่ไม่วางใกล้กับตัวละครเกินไป
+                    if (validPosition) {
+                        var distance = Math.sqrt(Math.pow(randomX - sebastian.x, 2) + Math.pow(randomY - sebastian.y, 2));
+                        if (distance < 50) { // ระยะห่างขั้นต่ำระหว่างตัวละครและไข่
+                            validPosition = false;
+                        }
+                    }
+                }
+
+                egg = new Sprite(game, eggImages[Math.floor(Math.random() * eggImages.length)], 30, 35);
+                egg.setSpeed(0);
+                egg.setPosition(randomX, randomY);
+                eggs.push(egg);
+            }
+        }
+
+        function update() {
+            if (!gameRunning) return;
+
+            game.clear();
+            background.update();
+            sebastian.update();
+
+            for (var i = 0; i < obstacles.length; i++) {
+                var obs = obstacles[i];
+                game.context.strokeStyle = "rgba(0, 0, 0, 0)";
+                game.context.lineWidth = 2;
+                game.context.strokeRect(obs.x, obs.y, obs.width, obs.height);
+            }
+
+            checkKeys();
+
+            for (var i = 0; i < eggs.length; i++) {
+                if (sebastian.collidesWith(eggs[i])) {
+                    // ตรวจสอบว่าตัวละครชนทับไข่จริงๆ
+                    if (Math.abs(sebastian.x - eggs[i].x) < sebastian.width / 2 && Math.abs(sebastian.y - eggs[i].y) < sebastian.height / 2) {
+                        score++;
+                        eggs[i].hide();
+                        eggs.splice(i, 1);
+                        spawnEggs(1);
+                        i--;
+                        continue;
+                    }
+                }
+                eggs[i].update();
+            }
+
+            document.getElementById("scoreBoard").innerText = "Eggs: " + score;
+            document.getElementById("timer").innerText = "Time: " + timeLeft + "s";
+        }
+
+        function checkCollision(newX, newY, width, height) {
+            for (var i = 0; i < obstacles.length; i++) {
+                var obs = obstacles[i];
+                if (
+                    newX < obs.x + obs.width &&
+                    newX + width > obs.x &&
+                    newY < obs.y + obs.height &&
+                    newY + height > obs.y
+                ) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function checkKeys() {
+            var newX = sebastian.x;
+            var newY = sebastian.y;
+            var speed = 2;
+            var width = sebastian.width;
+            var height = sebastian.height;
+
+            if (keysDown[K_LEFT]) {
+                newX -= speed;
+                sebastian.setCurrentCycle("left");
+                sebastian.setMoveAngle(270);
+            }
+            if (keysDown[K_RIGHT]) {
+                newX += speed;
+                sebastian.setCurrentCycle("right");
+                sebastian.setMoveAngle(90);
+            }
+            if (keysDown[K_UP]) {
+                newY -= speed;
+                sebastian.setCurrentCycle("up");
+                sebastian.setMoveAngle(0);
+            }
+            if (keysDown[K_DOWN]) {
+                newY += speed;
+                sebastian.setCurrentCycle("down");
+                sebastian.setMoveAngle(180);
+            }
+
+            if (!checkCollision(newX, newY, width, height)) {
+                sebastian.setPosition(newX, newY);
+                sebastian.setSpeed(speed);
+                sebastian.playAnimation();
+            } else {
+                sebastian.setSpeed(0);
+                sebastian.pauseAnimation();
+            }
+        }
+
+        function updateTimer() {
+            if (timeLeft > 0) {
+                timeLeft--;
+                document.getElementById("timer").innerText = "Time: " + timeLeft + "s";
+            } else {
+                endGame();
+            }
+        }
+
+        function endGame() {
+            gameRunning = false;
+            if (game) {
+                game.stop();
+            }
+
+            document.getElementById("dialog").style.display = "block";
+            document.getElementById("dialogTitle").innerText = "Game Over!";
+            document.getElementById("dialogText1").innerText = "You collected " + score + " eggs!";
+            document.getElementById("dialogText2").innerText = "Can you beat your score?";
+            document.getElementById("startButton").innerText = "Play Again";
+
+            if (window.timerInterval) {
+                clearInterval(window.timerInterval);
+            }
+        }
+
+        function restart() {
+            startGame();
+        }
+    </script>
+</head>
+
+<body onload="init()">
+    <div id="statusContainer">
+        <div id="scoreBoard" class="statusFrame pixel-corners">Eggs: 0</div>
+        <div id="timer" class="statusFrame pixel-corners">Time: 60s</div>
+    </div>
+    <div id="gameContainer" class="pixel-corners">
+        <div></div>
+    </div>
+    <div id="reset" style="display: none;">
+        <button type="button" onclick="startGame()" class="pixel-corners">Play again</button>
+    </div>
+    <div id="dialog" class="pixel-corners">
+        <h2 id="dialogTitle">Welcome to Easter Festival!</h2>
+        <p id="dialogText1">Collect as many eggs as you can within 60 seconds!</p>
+        <p id="dialogText2">Use the arrow keys to move Sebastian.</p>
+        <button id="startButton" onclick="startGame()" class="pixel-corners">Start Game</button>
+    </div>
+</body>
+
+</html>
