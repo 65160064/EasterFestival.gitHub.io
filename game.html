@@ -114,7 +114,7 @@
             box-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
             text-align: center;
             z-index: 3;
-            width: 400px;
+            width: 450px;
             border: 6px solid #8a6e5b;
             image-rendering: pixelated;
             display: none;
@@ -134,13 +134,13 @@
 
         #dialog h2 {
             margin-top: 0;
-            font-size: 32px;
+            font-size: 34px;
             color: #6b4f4f;
             text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);
         }
 
         #dialog p {
-            font-size: 18px;
+            font-size: 20px;
             color: #6b4f4f;
             margin: 10px 0;
         }
@@ -185,7 +185,7 @@
             border: 4px solid #8a6e5b;
             border-radius: 8px;
             padding: 6px 12px;
-            font-size: 16px;
+            font-size: 18px;
             color: #6b4f4f;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -218,7 +218,7 @@
 
         // กำหนดพื้นที่block ห้ามเดิน
         var obstacles = [
-            { x: 0, y: 670, width: 150, height: 80 },
+            { x: 0, y: 735, width: 150, height: 80 },
             { x: 600, y: 670, width: 160, height: 200 },
             { x: 320, y: 650, width: 150, height: -20 },
             { x: 380, y: 500, width: 60, height: 0 },
@@ -549,9 +549,9 @@
         <div id="scoreBoard" class="statusFrame pixel-corners">Eggs: 0</div>
         <div id="timer" class="statusFrame pixel-corners">Time: 60s</div>
     </div>
-    <div id="gameContainer" class="pixel-corners">
+<!--     <div id="gameContainer" class="pixel-corners">
         <div></div>
-    </div>
+    </div> -->
     <div id="audioControls" style="display: none;">
         <button type="button" onclick="toggleMusic()" class="audioButton pixel-corners">
             <span id="musicIcon">♪</span> Music
