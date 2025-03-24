@@ -81,7 +81,7 @@
             color: #fff;
             border: none;
             padding: 12px 24px;
-            font-size: 20px;
+            font-size: 22px;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -114,7 +114,7 @@
             box-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
             text-align: center;
             z-index: 3;
-            width: 450px;
+            width: 560px;
             border: 6px solid #8a6e5b;
             image-rendering: pixelated;
             display: none;
@@ -134,13 +134,13 @@
 
         #dialog h2 {
             margin-top: 0;
-            font-size: 34px;
+            font-size: 40px;
             color: #6b4f4f;
             text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.1);
         }
 
         #dialog p {
-            font-size: 20px;
+            font-size: 22px;
             color: #6b4f4f;
             margin: 10px 0;
         }
@@ -203,6 +203,17 @@
             width: 16px;
             height: 16px;
             fill: #6b4f4f;
+        }
+
+        #sebastianSprite {
+            max-width: 100%;
+            width: 70px;
+            margin: 10px auto;
+        }
+
+        #eggpic {
+            max-width: 100%;
+            width: 30px;
         }
     </style>
     <script type="text/javascript">
@@ -549,7 +560,7 @@
         <div id="scoreBoard" class="statusFrame pixel-corners">Eggs: 0</div>
         <div id="timer" class="statusFrame pixel-corners">Time: 60s</div>
     </div>
-<!--     <div id="gameContainer" class="pixel-corners">
+    <!--     <div id="gameContainer" class="pixel-corners">
         <div></div>
     </div> -->
     <div id="audioControls" style="display: none;">
@@ -564,7 +575,11 @@
         <button type="button" onclick="startGame()" class="pixel-corners">Play again</button>
     </div>
     <div id="dialog" class="pixel-corners">
-        <h2 id="dialogTitle">Welcome to Easter Festival!</h2>
+        <h2 id="dialogTitle">Welcome to
+            <img id="eggpic" src="egg1.png" />
+        </h2>
+        <h2 style="margin-top: -30px;">Easter Festival!</h2>
+        <img id="sebastianSprite" src="sebastian1.png" alt="Sebastian character" />
         <p id="dialogText1">Collect as many eggs as you can within 60 seconds!</p>
         <p id="dialogText2">Use the arrow keys to move Sebastian.</p>
         <button id="startButton" onclick="startGame()" class="pixel-corners">Start Game</button>
