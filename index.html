@@ -192,17 +192,18 @@
             font-family: 'Pixelify Sans', sans-serif;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
 
         .audioButton:hover {
             background-color: #e8d5b5;
         }
 
-        .audioButton svg {
-            width: 16px;
-            height: 16px;
-            fill: #6b4f4f;
+        .audioButton img {
+            width: 20px;
+            height: 20px;
+            object-fit: contain;
+            vertical-align: middle;
         }
 
         #sebastianSprite {
@@ -250,8 +251,8 @@
 
             // เตรียมเสียงสำหรับเกม
             bgMusic = new Audio('bg-sound.mp3'); // เพลงพื้นหลัง
-            bgMusic.loop = true; 
-            bgMusic.volume = 0.5; 
+            bgMusic.loop = true;
+            bgMusic.volume = 0.5;
 
             collectSound = new Audio('collect-sound.wav'); // เสียงตอนเก็บไข่
             collectSound.volume = 0.5;
@@ -262,20 +263,28 @@
 
         // เปิด-ปิดเพลงพื้นหลัง
         function toggleMusic() {
-            musicEnabled = !musicEnabled; // สลับสถานะเปิดปิด
+            musicEnabled = !musicEnabled;
+            const musicIcon = document.getElementById("musicIcon");
+
             if (musicEnabled) {
+                musicIcon.src = "music.png";
                 if (gameRunning) bgMusic.play();
-                document.getElementById("musicIcon").innerHTML = '♪';
             } else {
-                bgMusic.pause(); // หยุดเพลง
-                document.getElementById("musicIcon").innerHTML = '♪̸'; 
+                musicIcon.src = "music-mute.png";
+                bgMusic.pause();
             }
         }
 
         // เปิด-ปิดเสียงเอฟเฟกต์
         function toggleSound() {
-            soundEnabled = !soundEnabled; // สลับสถานะเปิดปิด
-            document.getElementById("soundIcon").innerHTML = soundEnabled ? '🔊' : '🔇';
+            soundEnabled = !soundEnabled;
+            const soundIcon = document.getElementById("soundIcon");
+
+            if (soundEnabled) {
+                soundIcon.src = "sound.png";
+            } else {
+                soundIcon.src = "sound-mute.png";
+            }
         }
 
         // เริ่มเกมใหม่
@@ -287,39 +296,51 @@
                 game.stop();
                 game.clear();
             }
+            const existingCanvas = document.querySelector("canvas");
+            if (existingCanvas) {
+                existingCanvas.remove();
+            }
 
-            // ล้างค่าต่างๆ
-            score = 0; 
-            timeLeft = 60; 
-            eggs = []; 
+            score = 0;
+            timeLeft = 60;
+            eggs = [];
+            document.getElementById("scoreBoard").innerText = "Eggs: 0";
+            document.getElementById("timer").innerText = "Time: 60s";
+            document.getElementById("reset").style.display = "none";
+            document.getElementById("audioControls").style.display = "flex";
 
-            // เริ่มเล่นเพลงถ้าเปิดไว้
             if (musicEnabled) {
                 bgMusic.currentTime = 0;
                 bgMusic.play();
             }
 
-            // สร้างฉากเกม
             game = new Scene();
             game.setSize(700, 700);
 
-            // สร้างพื้นหลัง
             background = new Sprite(game, "town.png", 700, 700);
-            background.setPosition(350, 350); 
+            background.setSpeed(0, 0);
+            background.setPosition(350, 350);
 
-            // สร้างตัวละคร Sebastian
-            sebastian = new Sprite(game, "Sebastian.png", 64, 128);
+            sebastian = new Sprite(game, "sebastian.png", 64, 128);
+            sebastian.loadAnimation(64, 128, 16, 32);
+            sebastian.generateAnimationCycles();
+            sebastian.renameCycles(["down", "right", "up", "left"]);
+            sebastian.setAnimationSpeed(200);
             sebastian.setPosition(350, 350);
-            sebastian.setCurrentCycle("down"); // ท่าทางเริ่มต้น
+            sebastian.setSpeed(0);
+            sebastian.pauseAnimation();
+            sebastian.setCurrentCycle("down");
 
             // สร้างไข่เริ่มต้น 4 ฟอง
             spawnEggs(4);
 
-            // ตั้งเวลานับถอยหลัง
+            if (window.timerInterval) {
+                clearInterval(window.timerInterval);
+            }
             window.timerInterval = setInterval(updateTimer, 1000);
 
-            gameRunning = true; 
-            game.start(); 
+            gameRunning = true;
+            game.start();
         }
 
         // สร้างไข่บนหน้าจอ
@@ -330,13 +351,12 @@
 
                 // หาตำแหน่งที่วางไข่ได้
                 while (!validPosition) {
-                    // สุ่มตำแหน่ง X และ Y
                     var randomX = Math.random() * 580 + 60;
                     var randomY = Math.random() * 580 + 60;
 
                     validPosition = true;
 
-                    // ตรวจสอบว่าไม่วางไข่ทับสิ่งกีดขวาง
+                     // ตรวจสอบว่าไม่วางไข่ทับสิ่งกีดขวาง
                     for (var j = 0; j < obstacles.length; j++) {
                         var obs = obstacles[j];
                         if (
@@ -350,55 +370,61 @@
                         }
                     }
 
-                    // ตรวจสอบว่าไม่ใกล้ตัวละครเกินไป
+                    // ตรวจสอบว่าไข่ไม่วางใกล้กับตัวละครเกินไป
                     if (validPosition) {
                         var distance = Math.sqrt(Math.pow(randomX - sebastian.x, 2) + Math.pow(randomY - sebastian.y, 2));
-                        if (distance < 50) {
+                        if (distance < 50) { // ระยะห่างขั้นต่ำระหว่างตัวละครและไข่
                             validPosition = false;
                         }
                     }
                 }
 
-                // สร้างไข่ในตำแหน่งที่เหมาะสม
                 egg = new Sprite(game, eggImages[Math.floor(Math.random() * eggImages.length)], 30, 35);
+                egg.setSpeed(0);
                 egg.setPosition(randomX, randomY);
-                eggs.push(egg); // เพิ่มไข่ลงในอาร์เรย์
+                eggs.push(egg);
             }
         }
 
-        // อัพเดทเกมทุกเฟรม
         function update() {
             if (!gameRunning) return;
 
-            // ล้างหน้าจอและวาดใหม่
             game.clear();
             background.update();
             sebastian.update();
 
-            // ตรวจสอบการกดปุ่ม
+            for (var i = 0; i < obstacles.length; i++) {
+                var obs = obstacles[i];
+                game.context.strokeStyle = "rgba(0, 0, 0, 0)";
+                game.context.lineWidth = 2;
+                game.context.strokeRect(obs.x, obs.y, obs.width, obs.height);
+            }
+
             checkKeys();
 
             // ตรวจสอบการชนไข่
             for (var i = 0; i < eggs.length; i++) {
                 if (sebastian.collidesWith(eggs[i])) {
-                    score++; // เพิ่มคะแนน
-                    eggs[i].hide(); // ซ่อนไข่
-                    eggs.splice(i, 1); // ลบไข่ออกจากอาร์เรย์
-                    spawnEggs(1); // สร้างไข่ใหม่
+                    // ตรวจสอบว่าตัวละครชนทับไข่จริงๆ
+                    if (Math.abs(sebastian.x - eggs[i].x) < sebastian.width / 2 && Math.abs(sebastian.y - eggs[i].y) < sebastian.height / 2) {
+                        score++;
+                        eggs[i].hide();
+                        eggs.splice(i, 1);
+                        spawnEggs(1);
 
-                    // เล่นเสียงเก็บไข่
-                    if (soundEnabled) {
-                        collectSound.currentTime = 0;
-                        collectSound.play();
+                        // เล่นเสียงเก็บไข่
+                        if (soundEnabled) {
+                            collectSound.currentTime = 0;
+                            collectSound.play();
+                        }
+
+                        i--;
+                        continue;
                     }
-
-                    i--;
-                    continue;
                 }
                 eggs[i].update();
             }
 
-            // อัพเดทคะแนนและเวลา
             document.getElementById("scoreBoard").innerText = "Eggs: " + score;
             document.getElementById("timer").innerText = "Time: " + timeLeft + "s";
         }
@@ -416,40 +442,46 @@
                     return true;
                 }
             }
-            return false; 
+            return false;
         }
 
         // ตรวจสอบการกดปุ่มคีย์บอร์ด
         function checkKeys() {
             var newX = sebastian.x;
             var newY = sebastian.y;
+            var speed = 2;
+            var width = sebastian.width;
+            var height = sebastian.height;
             var isMoving = false;
 
-            // ตรวจสอบปุ่มที่กดและเคลื่อนที่
             if (keysDown[K_LEFT]) {
-                newX -= 2; 
+                newX -= speed;
                 sebastian.setCurrentCycle("left");
+                sebastian.setMoveAngle(270);
                 isMoving = true;
             }
             if (keysDown[K_RIGHT]) {
-                newX += 2; 
+                newX += speed;
                 sebastian.setCurrentCycle("right");
+                sebastian.setMoveAngle(90);
                 isMoving = true;
             }
             if (keysDown[K_UP]) {
-                newY -= 2; 
+                newY -= speed;
                 sebastian.setCurrentCycle("up");
+                sebastian.setMoveAngle(0);
                 isMoving = true;
             }
             if (keysDown[K_DOWN]) {
-                newY += 2; 
+                newY += speed;
                 sebastian.setCurrentCycle("down");
+                sebastian.setMoveAngle(180);
                 isMoving = true;
             }
 
-            // ตรวจสอบการชนก่อนเคลื่อนที่
-            if (!checkCollision(newX, newY, sebastian.width, sebastian.height)) {
+            if (!checkCollision(newX, newY, width, height)) {
                 sebastian.setPosition(newX, newY);
+                sebastian.setSpeed(speed);
                 sebastian.playAnimation();
 
                 // เล่นเสียงเดินถ้ากำลังเคลื่อนที่
@@ -457,12 +489,22 @@
                     isWalking = true;
                     playWalkSound();
                     walkSoundInterval = setInterval(playWalkSound, 300);
+                } else if (!isMoving && isWalking) {
+                    isWalking = false;
+                    clearInterval(walkSoundInterval);
                 }
+
             } else {
+                sebastian.setSpeed(0);
                 sebastian.pauseAnimation();
+
+                // หยุดเสียงเดินถ้าไม่เคลื่อนที่
+                if (isWalking) {
+                    isWalking = false;
+                    clearInterval(walkSoundInterval);
+                }
             }
 
-            // หยุดเสียงเดินถ้าไม่เคลื่อนที่
             if (!isMoving && isWalking) {
                 isWalking = false;
                 clearInterval(walkSoundInterval);
@@ -472,7 +514,7 @@
         // เล่นเสียงเดิน
         function playWalkSound() {
             if (soundEnabled) {
-                walkSound.currentTime = 0; 
+                walkSound.currentTime = 0;
                 walkSound.play();
             }
         }
@@ -480,10 +522,10 @@
         // อัพเดทเวลานับถอยหลัง
         function updateTimer() {
             if (timeLeft > 0) {
-                timeLeft--; 
+                timeLeft--;
                 document.getElementById("timer").innerText = "Time: " + timeLeft + "s";
             } else {
-                endGame(); 
+                endGame();
             }
         }
 
@@ -511,21 +553,23 @@
                         clearInterval(fadeOut);
                     }
                 }, 100);
+            } else {
+                bgMusic.pause();
+                bgMusic.volume = 0.5;
             }
 
             // แสดงผลลัพธ์
             document.getElementById("dialog").style.display = "block";
             document.getElementById("dialogTitle").innerText = "Game Over!";
             document.getElementById("dialogText1").innerText = "You collected " + score + " eggs!";
+            document.getElementById("dialogText2").innerText = "Can you beat your score?";
             document.getElementById("startButton").innerText = "Play Again";
 
-            // ล้างตัวนับเวลา
             if (window.timerInterval) {
                 clearInterval(window.timerInterval);
             }
         }
 
-        // เริ่มเกมใหม่ (เหมือน startGame)
         function restart() {
             startGame();
         }
@@ -537,12 +581,12 @@
         <div id="scoreBoard" class="statusFrame pixel-corners">Eggs: 0</div>
         <div id="timer" class="statusFrame pixel-corners">Time: 60s</div>
     </div>
-    <div id="audioControls" style="display: none;">
+    <div id="audioControls">
         <button type="button" onclick="toggleMusic()" class="audioButton pixel-corners">
-            <span id="musicIcon">♪</span> Music
+            <img id="musicIcon" src="music.png" alt="Music"> Music
         </button>
         <button type="button" onclick="toggleSound()" class="audioButton pixel-corners">
-            <span id="soundIcon">🔊</span> Sound
+            <img id="soundIcon" src="sound.png" alt="Sound"> Sound
         </button>
     </div>
     <div id="reset" style="display: none;">
@@ -553,7 +597,7 @@
             <img id="eggpic" src="egg1.png" />
         </h2>
         <h2 style="margin-top: -30px;">Easter Festival!</h2>
-        <img id="sebastianSprite" src="Sebastian1.png" alt="Sebastian character" />
+        <img id="sebastianSprite" src="sebastian1.png" alt="Sebastian character" />
         <p id="dialogText1">Collect as many eggs as you can within 60 seconds!</p>
         <p id="dialogText2">Use the arrow keys to move Sebastian.</p>
         <button id="startButton" onclick="startGame()" class="pixel-corners">Start Game</button>
